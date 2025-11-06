@@ -40,6 +40,7 @@ dependencies {
     // RecyclerView & CardView (다이어리 목록)
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     // JSON 파싱 (HttpsURLConnection 사용 시 필수)
     implementation("com.google.code.gson:gson:2.10.1")
