@@ -1,0 +1,80 @@
+# ==================== IDE ====================
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# ==================== OS ====================
+.DS_Store
+Thumbs.db
+
+# ==================== Android ====================
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android Studio
+android_app/build/
+android_app/.gradle/
+android_app/local.properties
+android_app/*.apk
+android_app/*.ap_
+
+# ==================== Backend (Python) ====================
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==================== Database ====================
+*.db
+*.sql.bak
+
+# ==================== Documentation ====================
+# Keep all documentation files
+
+# ==================== Other ====================
+.cache/
+node_modules/
