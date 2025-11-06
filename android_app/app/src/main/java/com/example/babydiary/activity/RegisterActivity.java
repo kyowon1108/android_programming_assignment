@@ -97,7 +97,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         showLoading(true);
 
-        authService.register(this, email, password, nickname, new OnApiResponseListener<User>() {
+        authService.register(email, password, nickname, new OnApiResponseListener<User>() {
             @Override
             public void onSuccess(User user) {
                 showLoading(false);

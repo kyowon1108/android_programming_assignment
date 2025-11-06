@@ -1,5 +1,6 @@
 package com.example.babydiary.model;
 
+import com.example.babydiary.util.Constants;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -78,6 +79,17 @@ public class User {
 
     public String getUpdatedAt() {
         return updatedAt;
+    }
+
+    /**
+     * 전체 프로필 이미지 URL 반환
+     * @return 서버 BASE_URL + profileImageUrl
+     */
+    public String getFullProfileImageUrl() {
+        if (profileImageUrl == null || profileImageUrl.isEmpty()) {
+            return null;
+        }
+        return Constants.BASE_URL + "/uploads/" + profileImageUrl;
     }
 
     // Setters

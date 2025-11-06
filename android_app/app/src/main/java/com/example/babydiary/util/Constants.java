@@ -75,6 +75,7 @@ public class Constants {
 
     public static final int MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
     public static final int IMAGE_COMPRESSION_QUALITY = 80; // 0-100
+    public static final int IMAGE_QUALITY = 80; // 0-100 (alias)
     public static final int MAX_IMAGE_WIDTH = 1920;
     public static final int MAX_IMAGE_HEIGHT = 1080;
 

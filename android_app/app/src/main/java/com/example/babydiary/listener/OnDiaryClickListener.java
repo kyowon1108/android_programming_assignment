@@ -16,5 +16,5 @@ public interface OnDiaryClickListener {
      * 다이어리 삭제 버튼 클릭
      * @param diary 삭제할 다이어리
      */
-    void onDeleteClick(Diary diary);
+    void onDiaryDelete(Diary diary);
 }

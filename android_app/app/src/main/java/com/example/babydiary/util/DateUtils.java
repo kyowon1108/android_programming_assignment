@@ -44,6 +44,20 @@ public class DateUtils {
     }
 
     /**
+     * "yyyy-MM-dd" 형식을 한국어 표시용 형식으로 변환
+     * 예: "2025-01-06" -> "2025년 1월 6일"
+     */
+    public static String formatDateKorean(String dateString) {
+        try {
+            Date date = DATE_FORMAT.parse(dateString);
+            return DISPLAY_FORMAT.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return dateString; // 파싱 실패 시 원본 반환
+        }
+    }
+
+    /**
      * "yyyy-MM-dd" 형식을 표시용 형식으로 변환
      * 예: "2025-01-06" -> "2025년 01월 06일"
      */

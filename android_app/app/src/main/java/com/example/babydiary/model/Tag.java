@@ -34,6 +34,10 @@ public class Tag {
         return tagName;
     }
 
+    public String getName() {
+        return tagName;
+    }
+
     public String getTagCategory() {
         return tagCategory;
     }
