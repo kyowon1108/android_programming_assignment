@@ -37,9 +37,15 @@ public class DiaryService {
             return;
         }
 
+        // 현재 날짜를 ISO 8601 형식으로 (YYYY-MM-DD)
+        String currentDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                .format(new java.util.Date());
+
         // 텍스트 필드 설정
         Map<String, String> textFields = new HashMap<>();
+        textFields.put("date", currentDate);
         textFields.put("description", description);
+        textFields.put("tag_ids", "[]");  // 빈 태그 배열
 
         // Multipart 업로드
         ApiClient.postMultipart(Constants.ENDPOINT_DIARIES, token, photoFile, "photo", textFields, new ApiClient.ApiCallback() {
