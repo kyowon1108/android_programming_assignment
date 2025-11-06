@@ -12,7 +12,9 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 다이어리 관련 API 서비스
@@ -20,6 +22,44 @@ import java.util.List;
 public class DiaryService {
     private static final String TAG = "DiaryService";
     private final Gson gson = new Gson();
+
+    /**
+     * 다이어리 생성 (파일 업로드)
+     * @param context Context
+     * @param description 다이어리 내용
+     * @param photoFile 사진 파일
+     * @param listener 응답 리스너
+     */
+    public void createDiary(Context context, String description, File photoFile, OnApiResponseListener<Diary> listener) {
+        String token = SharedPrefsManager.getToken(context);
+        if (token == null) {
+            listener.onError(Constants.ERROR_UNAUTHORIZED);
+            return;
+        }
+
+        // 텍스트 필드 설정
+        Map<String, String> textFields = new HashMap<>();
+        textFields.put("description", description);
+
+        // Multipart 업로드
+        ApiClient.postMultipart(Constants.ENDPOINT_DIARIES, token, photoFile, "photo", textFields, new ApiClient.ApiCallback() {
+            @Override
+            public void onSuccess(String response) {
+                try {
+                    Diary diary = gson.fromJson(response, Diary.class);
+                    listener.onSuccess(diary);
+                } catch (Exception e) {
+                    Log.e(TAG, "Create diary parsing error: " + e.getMessage());
+                    listener.onError("응답 파싱 오류");
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                listener.onError(error);
+            }
+        });
+    }
 
     /**
      * 다이어리 목록 조회

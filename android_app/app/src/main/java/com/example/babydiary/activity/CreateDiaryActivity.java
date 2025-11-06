@@ -20,6 +20,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.example.babydiary.R;
+import com.example.babydiary.listener.OnApiResponseListener;
+import com.example.babydiary.model.Diary;
+import com.example.babydiary.service.DiaryService;
 import com.example.babydiary.util.Constants;
 import com.example.babydiary.util.ImageUtils;
 import com.example.babydiary.util.PermissionUtils;
@@ -44,6 +47,8 @@ public class CreateDiaryActivity extends AppCompatActivity {
     private File photoFile;
     private File tempCameraFile;
 
+    private DiaryService diaryService;
+
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
@@ -53,6 +58,8 @@ public class CreateDiaryActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_diary);
+
+        diaryService = new DiaryService();
 
         initViews();
         setupActivityResultLaunchers();
@@ -247,18 +254,32 @@ public class CreateDiaryActivity extends AppCompatActivity {
             return;
         }
 
-        if (photoFile == null) {
+        if (photoFile == null || !photoFile.exists()) {
             Toast.makeText(this, "사진을 선택해주세요", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // TODO: MultipartFormData로 서버에 업로드
-        // 현재는 파일이 준비된 상태
-        Toast.makeText(this, "다이어리 작성 기능은 추후 구현 예정입니다", Toast.LENGTH_SHORT).show();
+        showLoading(true);
 
-        Log.d(TAG, "Ready to save diary:");
-        Log.d(TAG, "Description: " + description);
-        Log.d(TAG, "Photo file: " + photoFile.getAbsolutePath());
+        // 다이어리 생성 API 호출
+        diaryService.createDiary(this, description, photoFile, new OnApiResponseListener<Diary>() {
+            @Override
+            public void onSuccess(Diary diary) {
+                showLoading(false);
+                Log.d(TAG, "Diary created successfully: " + diary.getDiaryId());
+                Toast.makeText(CreateDiaryActivity.this, "다이어리가 작성되었습니다!", Toast.LENGTH_SHORT).show();
+
+                // 성공 후 MainActivity로 돌아가기
+                finish();
+            }
+
+            @Override
+            public void onError(String error) {
+                showLoading(false);
+                Log.e(TAG, "Create diary error: " + error);
+                Toast.makeText(CreateDiaryActivity.this, "저장 실패: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     /**
