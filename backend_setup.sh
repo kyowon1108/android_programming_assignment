@@ -37,9 +37,21 @@ echo ""
 echo "5. 환경 변수 파일(.env) 확인 중..."
 if [ ! -f ".env" ]; then
     cp .env.example .env
+
+    # 현재 사용자 이름으로 DB_USER 자동 설정
+    CURRENT_USER=$(whoami)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/your_mac_username/$CURRENT_USER/g" .env
+        sed -i '' "s/DB_PASSWORD=.*/DB_PASSWORD=/g" .env
+    else
+        sed -i "s/your_mac_username/$CURRENT_USER/g" .env
+        sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=/g" .env
+    fi
+
     echo "  .env 파일이 생성되었습니다."
-    echo "  !!! 중요: backend/.env 파일을 열어 다음 값들을 설정해주세요:"
-    echo "      - DB_PASSWORD (PostgreSQL 비밀번호)"
+    echo "  DB_USER가 '$CURRENT_USER'로 자동 설정되었습니다."
+    echo ""
+    echo "  (선택) AI 기능 사용 시 backend/.env 파일을 열어 다음 값들을 설정해주세요:"
     echo "      - GOOGLE_VISION_API_KEY"
     echo "      - GOOGLE_GEMINI_API_KEY"
 else
