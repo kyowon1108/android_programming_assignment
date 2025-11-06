@@ -18,11 +18,16 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.babydiary.R;
+import com.example.babydiary.adapter.TagAdapter;
 import com.example.babydiary.listener.OnApiResponseListener;
 import com.example.babydiary.model.Diary;
+import com.example.babydiary.model.Tag;
 import com.example.babydiary.service.DiaryService;
+import com.example.babydiary.service.TagService;
 import com.example.babydiary.util.Constants;
 import com.example.babydiary.util.ImageUtils;
 import com.example.babydiary.util.PermissionUtils;
@@ -42,12 +47,17 @@ public class CreateDiaryActivity extends AppCompatActivity {
     private Button btnSelectPhoto;
     private Button btnSave;
     private View progressBar;
+    private RecyclerView rvTags;
 
     private Uri photoUri;
     private File photoFile;
     private File tempCameraFile;
 
     private DiaryService diaryService;
+    private TagService tagService;
+    private TagAdapter tagAdapter;
+    private java.util.List<Tag> tags;
+    private java.util.List<Integer> selectedTagIds;
 
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<Intent> galleryLauncher;
@@ -60,10 +70,15 @@ public class CreateDiaryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_create_diary);
 
         diaryService = new DiaryService();
+        tagService = new TagService();
+        tags = new java.util.ArrayList<>();
+        selectedTagIds = new java.util.ArrayList<>();
 
         initViews();
         setupActivityResultLaunchers();
         setupListeners();
+        setupTags();
+        loadTags();
     }
 
     /**
@@ -75,6 +90,51 @@ public class CreateDiaryActivity extends AppCompatActivity {
         btnSelectPhoto = findViewById(R.id.btn_select_photo);
         btnSave = findViewById(R.id.btn_save);
         progressBar = findViewById(R.id.progress_bar);
+        rvTags = findViewById(R.id.rv_tags);
+    }
+
+    /**
+     * 태그 RecyclerView 설정
+     */
+    private void setupTags() {
+        tagAdapter = new TagAdapter(tags, new TagAdapter.OnTagClickListener() {
+            @Override
+            public void onTagClick(Tag tag, boolean isSelected) {
+                if (isSelected) {
+                    if (!selectedTagIds.contains(tag.getTagId())) {
+                        selectedTagIds.add(tag.getTagId());
+                    }
+                } else {
+                    selectedTagIds.remove(Integer.valueOf(tag.getTagId()));
+                }
+                Log.d(TAG, "Selected tags: " + selectedTagIds.size());
+            }
+        });
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rvTags.setLayoutManager(layoutManager);
+        rvTags.setAdapter(tagAdapter);
+    }
+
+    /**
+     * 태그 목록 로드
+     */
+    private void loadTags() {
+        tagService.getTags(this, new OnApiResponseListener<java.util.List<Tag>>() {
+            @Override
+            public void onSuccess(java.util.List<Tag> tagList) {
+                tags.clear();
+                tags.addAll(tagList);
+                tagAdapter.notifyDataSetChanged();
+                Log.d(TAG, "Tags loaded: " + tags.size());
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Load tags error: " + error);
+                // 태그 로드 실패해도 다이어리 작성은 가능하도록 함
+            }
+        });
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.example.babydiary.activity;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,9 +32,13 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
     private DiaryAdapter adapter;
     private View progressBar;
     private View contentLayout;
+    private ImageButton btnBgmToggle;
 
     private WeeklyDiaryService weeklyDiaryService;
     private int weeklyDiaryId;
+
+    private MediaPlayer mediaPlayer;
+    private boolean isBgmPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +56,9 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
 
         initViews();
         setupRecyclerView();
+        setupListeners();
         loadWeeklyDiary();
+        initBgm();
     }
 
     /**
@@ -123,5 +131,114 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
     public void onDiaryDelete(Diary diary) {
         // 주간 다이어리 화면에서는 삭제 기능 비활성화
         Toast.makeText(this, "주간 다이어리에서는 삭제할 수 없습니다", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 리스너 설정
+     */
+    private void setupListeners() {
+        // BGM 토글 버튼이 레이아웃에 있는 경우 설정
+        // btnBgmToggle.setOnClickListener(v -> toggleBgm());
+    }
+
+    /**
+     * BGM 초기화
+     */
+    private void initBgm() {
+        try {
+            // 샘플 BGM 사용 (res/raw 폴더에 bgm 파일 추가 필요)
+            // mediaPlayer = MediaPlayer.create(this, R.raw.bgm_sample);
+
+            // 임시로 시스템 사운드 사용
+            mediaPlayer = MediaPlayer.create(this, android.provider.Settings.System.DEFAULT_RINGTONE_URI);
+
+            if (mediaPlayer != null) {
+                mediaPlayer.setLooping(true);
+                mediaPlayer.setVolume(0.5f, 0.5f);
+                Log.d(TAG, "BGM initialized");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "BGM initialization failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * BGM 재생/일시정지 토글
+     */
+    private void toggleBgm() {
+        if (mediaPlayer == null) {
+            initBgm();
+        }
+
+        if (mediaPlayer != null) {
+            if (isBgmPlaying) {
+                pauseBgm();
+            } else {
+                playBgm();
+            }
+        }
+    }
+
+    /**
+     * BGM 재생
+     */
+    private void playBgm() {
+        try {
+            if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+                isBgmPlaying = true;
+                // btnBgmToggle.setImageResource(R.drawable.ic_pause);
+                Log.d(TAG, "BGM started");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "BGM play failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * BGM 일시정지
+     */
+    private void pauseBgm() {
+        try {
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                isBgmPlaying = false;
+                // btnBgmToggle.setImageResource(R.drawable.ic_play);
+                Log.d(TAG, "BGM paused");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "BGM pause failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * BGM 정지
+     */
+    private void stopBgm() {
+        try {
+            if (mediaPlayer != null) {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.release();
+                mediaPlayer = null;
+                isBgmPlaying = false;
+                Log.d(TAG, "BGM stopped");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "BGM stop failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pauseBgm();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopBgm();
     }
 }
