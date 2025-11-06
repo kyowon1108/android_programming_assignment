@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 외부 저장소의 Pictures 디렉토리 -->
+    <external-files-path
+        name="pictures"
+        path="Pictures/" />
+
+    <!-- 캐시 디렉토리 -->
+    <cache-path
+        name="cache"
+        path="/" />
+
+    <!-- 외부 캐시 디렉토리 -->
+    <external-cache-path
+        name="external_cache"
+        path="/" />
+</paths>
