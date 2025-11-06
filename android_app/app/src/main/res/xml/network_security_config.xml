@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 개발 환경: localhost HTTP 허용 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android 에뮬레이터에서 호스트 PC의 localhost 접근 -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <!-- 실제 기기에서 localhost 접근 -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- 로컬 네트워크 IP (개발용) - 필요시 PC의 실제 IP로 변경 -->
+        <domain includeSubdomains="true">192.168.0.0/16</domain>
+    </domain-config>
+</network-security-config>
