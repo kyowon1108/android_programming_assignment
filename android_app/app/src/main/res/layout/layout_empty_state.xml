@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <!-- 빈 상태 아이콘 -->
+    <ImageView
+        android:id="@+id/iv_empty_icon"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_image_placeholder"
+        android:alpha="0.3"
+        android:layout_marginBottom="24dp" />
+
+    <!-- 빈 상태 제목 -->
+    <TextView
+        android:id="@+id/tv_empty_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="아직 기록이 없어요"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 빈 상태 설명 -->
+    <TextView
+        android:id="@+id/tv_empty_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="첫 번째 다이어리를 작성해보세요!"
+        android:textSize="16sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 액션 버튼 (옵션) -->
+    <Button
+        android:id="@+id/btn_empty_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="다이어리 작성하기"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/primary"
+        android:paddingHorizontal="24dp"
+        android:visibility="gone" />
+
+</LinearLayout>

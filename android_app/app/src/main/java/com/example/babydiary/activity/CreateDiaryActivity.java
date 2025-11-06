@@ -2,7 +2,6 @@ package com.example.babydiary.activity;
 
 import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,6 +20,7 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.babydiary.R;
 import com.example.babydiary.adapter.TagAdapter;
 import com.example.babydiary.listener.OnApiResponseListener;
@@ -31,7 +31,6 @@ import com.example.babydiary.service.TagService;
 import com.example.babydiary.util.Constants;
 import com.example.babydiary.util.ImageUtils;
 import com.example.babydiary.util.PermissionUtils;
-import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,15 +96,16 @@ public class CreateDiaryActivity extends AppCompatActivity {
      * 태그 RecyclerView 설정
      */
     private void setupTags() {
-        tagAdapter = new TagAdapter(tags, new TagAdapter.OnTagClickListener() {
+        tagAdapter = new TagAdapter(this, tags, new TagAdapter.OnTagClickListener() {
             @Override
-            public void onTagClick(Tag tag, boolean isSelected) {
-                if (isSelected) {
-                    if (!selectedTagIds.contains(tag.getTagId())) {
-                        selectedTagIds.add(tag.getTagId());
-                    }
-                } else {
+            public void onTagClick(Tag tag) {
+                // 토글 방식으로 선택/해제
+                if (selectedTagIds.contains(tag.getTagId())) {
                     selectedTagIds.remove(Integer.valueOf(tag.getTagId()));
+                    Toast.makeText(CreateDiaryActivity.this, tag.getName() + " 태그 해제", Toast.LENGTH_SHORT).show();
+                } else {
+                    selectedTagIds.add(tag.getTagId());
+                    Toast.makeText(CreateDiaryActivity.this, tag.getName() + " 태그 선택", Toast.LENGTH_SHORT).show();
                 }
                 Log.d(TAG, "Selected tags: " + selectedTagIds.size());
             }
@@ -120,7 +120,7 @@ public class CreateDiaryActivity extends AppCompatActivity {
      * 태그 목록 로드
      */
     private void loadTags() {
-        tagService.getTags(this, new OnApiResponseListener<java.util.List<Tag>>() {
+        tagService.getAllTags(this, new OnApiResponseListener<java.util.List<Tag>>() {
             @Override
             public void onSuccess(java.util.List<Tag> tagList) {
                 tags.clear();

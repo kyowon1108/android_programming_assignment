@@ -20,10 +20,11 @@ public class TagService {
     private final Gson gson = new Gson();
 
     /**
-     * 모든 태그 조회
+     * 모든 태그 조회 (Context 포함 버전)
+     * @param context Context
      * @param listener 응답 리스너
      */
-    public void getAllTags(OnApiResponseListener<List<Tag>> listener) {
+    public void getAllTags(Context context, OnApiResponseListener<List<Tag>> listener) {
         ApiClient.get(Constants.ENDPOINT_TAGS, null, new ApiClient.ApiCallback() {
             @Override
             public void onSuccess(String response) {
