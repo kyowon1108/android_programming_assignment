@@ -381,7 +381,8 @@ MIT License
 ## 프로젝트 상태
 - ✅ Database 스키마 완성
 - ✅ Backend API 완성
-- ⏳ Android 앱 개발 진행 중
+- ✅ Android 개발 환경 설정 완료
+- ⏳ Android 앱 기능 구현 진행 중
 - ⏳ 통합 테스트 진행 예정
 
 ---
