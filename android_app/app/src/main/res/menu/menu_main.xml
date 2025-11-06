@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_profile"
+        android:title="프로필"
+        android:icon="@drawable/ic_profile_default"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_weekly"
+        android:title="주간 다이어리"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_logout"
+        android:title="로그아웃"
+        app:showAsAction="never" />
+
+</menu>
