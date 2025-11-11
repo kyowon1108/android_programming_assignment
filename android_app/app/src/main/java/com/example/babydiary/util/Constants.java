@@ -18,9 +18,9 @@ public class Constants {
     /**
      * 실제 기기에서 접근
      * 같은 Wi-Fi 네트워크에 연결된 PC의 IP 주소로 변경 필요
-     * 예: "http://192.168.0.100:8000"
+     * 현재 Mac IP: 172.100.4.137
      */
-    private static final String BASE_URL_DEVICE = "http://192.168.0.40:8000";
+    private static final String BASE_URL_DEVICE = "http://172.100.4.137:8000";
 
     /**
      * 현재 환경에 맞는 Base URL 자동 선택

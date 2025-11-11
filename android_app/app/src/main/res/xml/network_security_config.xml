@@ -15,6 +15,7 @@
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <!-- 로컬 네트워크 IP (개발용) - 명시적 IP 주소 -->
+        <domain includeSubdomains="true">172.100.4.137</domain>
         <domain includeSubdomains="true">192.168.0.40</domain>
         <domain includeSubdomains="true">192.168.0.51</domain>
         <domain includeSubdomains="true">192.168.0.100</domain>
