@@ -11,8 +11,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 주간 다이어리 관련 API 서비스
@@ -22,25 +25,38 @@ public class WeeklyDiaryService {
     private final Gson gson = new Gson();
 
     /**
-     * 주간 다이어리 생성
+     * 주간 다이어리 생성 (이미지 없음)
      * @param context Context
      * @param year 연도
      * @param weekNumber 주차
      * @param listener 응답 리스너
      */
     public void createWeeklyDiary(Context context, int year, int weekNumber, OnApiResponseListener<WeeklyDiary> listener) {
+        createWeeklyDiary(context, year, weekNumber, null, listener);
+    }
+
+    /**
+     * 주간 다이어리 생성 (이미지 포함)
+     * @param context Context
+     * @param year 연도
+     * @param weekNumber 주차
+     * @param photoFile 사진 파일 (nullable)
+     * @param listener 응답 리스너
+     */
+    public void createWeeklyDiary(Context context, int year, int weekNumber, File photoFile, OnApiResponseListener<WeeklyDiary> listener) {
         String token = SharedPrefsManager.getToken(context);
         if (token == null) {
             listener.onError(Constants.ERROR_UNAUTHORIZED);
             return;
         }
 
-        // JSON 요청 바디 생성
-        JsonObject jsonBody = new JsonObject();
-        jsonBody.addProperty("year", year);
-        jsonBody.addProperty("week_number", weekNumber);
+        // 텍스트 필드 설정
+        Map<String, String> textFields = new HashMap<>();
+        textFields.put("year", String.valueOf(year));
+        textFields.put("week_number", String.valueOf(weekNumber));
 
-        ApiClient.post(Constants.ENDPOINT_WEEKLY_DIARIES, token, jsonBody.toString(), new ApiClient.ApiCallback() {
+        // Multipart 업로드
+        ApiClient.postMultipart(Constants.ENDPOINT_WEEKLY_DIARIES, token, photoFile, "photo", textFields, new ApiClient.ApiCallback() {
             @Override
             public void onSuccess(String response) {
                 try {

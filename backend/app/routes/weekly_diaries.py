@@ -3,9 +3,12 @@ Weekly Diary Routes
 주간 다이어리 API 엔드포인트
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
 from typing import Optional, List
 import logging
+import os
+import uuid
+from pathlib import Path
 
 from app.models.schemas import (
     WeeklyDiaryCreate, WeeklyDiaryResponse,
@@ -19,25 +22,69 @@ from app.services.gemini_service import gemini_service
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/weekly_diaries", tags=["Weekly Diaries"])
 
+# Upload directory
+UPLOAD_DIR = Path("uploads/weekly")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 
 @router.post("", response_model=WeeklyDiaryResponse, status_code=status.HTTP_201_CREATED)
 async def create_weekly_diary(
-    weekly_data: WeeklyDiaryCreate,
+    year: int = Form(...),
+    week_number: int = Form(...),
+    photo: Optional[UploadFile] = File(None),
     user_id: int = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """
-    Create or regenerate weekly diary
+    Create or regenerate weekly diary with optional custom image
 
     - **year**: Year (2000-2100)
     - **week_number**: ISO week number (1-53)
+    - **photo**: Optional custom image for weekly diary
 
     Aggregates all diaries from the specified week and generates AI summary
 
     Requires: Bearer token in Authorization header
     """
     try:
-        start_date, end_date = get_week_dates(weekly_data.year, weekly_data.week_number)
+        # Validate input
+        if year < 2000 or year > 2100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid year (must be 2000-2100)"
+            )
+        if week_number < 1 or week_number > 53:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid week number (must be 1-53)"
+            )
+
+        start_date, end_date = get_week_dates(year, week_number)
+
+        # Handle photo upload
+        photo_filename = None
+        user_uploaded_image = False
+
+        if photo:
+            # Validate file type
+            if not photo.content_type or not photo.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid file type. Only images are allowed."
+                )
+
+            # Generate unique filename
+            file_ext = os.path.splitext(photo.filename)[1] if photo.filename else ".jpg"
+            photo_filename = f"weekly_{user_id}_{year}W{week_number:02d}_{uuid.uuid4().hex[:8]}{file_ext}"
+            photo_path = UPLOAD_DIR / photo_filename
+
+            # Save file
+            with open(photo_path, "wb") as f:
+                content = await photo.read()
+                f.write(content)
+
+            user_uploaded_image = True
+            logger.info(f"Uploaded weekly diary image: {photo_filename}")
 
         with db.get_cursor() as cursor:
             # Get all diaries for the week
@@ -48,7 +95,7 @@ async def create_weekly_diary(
                 WHERE user_id = %s AND year = %s AND week_number = %s
                 ORDER BY date ASC
                 """,
-                (user_id, weekly_data.year, weekly_data.week_number)
+                (user_id, year, week_number)
             )
             weekly_diaries = cursor.fetchall()
 
@@ -68,25 +115,50 @@ async def create_weekly_diary(
             summary_data = await gemini_service.generate_weekly_summary(combined_text)
 
             # Insert or update weekly diary
-            cursor.execute(
-                """
-                INSERT INTO weekly_diaries (
-                    user_id, year, week_number, start_date, end_date,
-                    weekly_summary_text, weekly_title
+            if photo_filename:
+                # With custom image
+                cursor.execute(
+                    """
+                    INSERT INTO weekly_diaries (
+                        user_id, year, week_number, start_date, end_date,
+                        weekly_summary_text, weekly_title, weekly_image_url, user_uploaded_image
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (user_id, year, week_number)
+                    DO UPDATE SET
+                        weekly_summary_text = EXCLUDED.weekly_summary_text,
+                        weekly_title = EXCLUDED.weekly_title,
+                        weekly_image_url = EXCLUDED.weekly_image_url,
+                        user_uploaded_image = EXCLUDED.user_uploaded_image,
+                        updated_at = CURRENT_TIMESTAMP
+                    RETURNING week_id, user_id, year, week_number, start_date, end_date,
+                              weekly_summary_text, weekly_image_url, weekly_title,
+                              user_uploaded_image, created_at, updated_at
+                    """,
+                    (user_id, year, week_number, start_date, end_date,
+                     summary_data["summary"], summary_data["title"], photo_filename, user_uploaded_image)
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (user_id, year, week_number)
-                DO UPDATE SET
-                    weekly_summary_text = EXCLUDED.weekly_summary_text,
-                    weekly_title = EXCLUDED.weekly_title,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING week_id, user_id, year, week_number, start_date, end_date,
-                          weekly_summary_text, weekly_image_url, weekly_title,
-                          user_uploaded_image, created_at, updated_at
-                """,
-                (user_id, weekly_data.year, weekly_data.week_number,
-                 start_date, end_date, summary_data["summary"], summary_data["title"])
-            )
+            else:
+                # Without custom image (AI generated or none)
+                cursor.execute(
+                    """
+                    INSERT INTO weekly_diaries (
+                        user_id, year, week_number, start_date, end_date,
+                        weekly_summary_text, weekly_title
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (user_id, year, week_number)
+                    DO UPDATE SET
+                        weekly_summary_text = EXCLUDED.weekly_summary_text,
+                        weekly_title = EXCLUDED.weekly_title,
+                        updated_at = CURRENT_TIMESTAMP
+                    RETURNING week_id, user_id, year, week_number, start_date, end_date,
+                              weekly_summary_text, weekly_image_url, weekly_title,
+                              user_uploaded_image, created_at, updated_at
+                    """,
+                    (user_id, year, week_number, start_date, end_date,
+                     summary_data["summary"], summary_data["title"])
+                )
 
             weekly_row = cursor.fetchone()
 

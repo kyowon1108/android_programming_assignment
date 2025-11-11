@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.babydiary.R;
 import com.example.babydiary.adapter.TagAdapter;
+import com.example.babydiary.dialog.LoadingDialog;
 import com.example.babydiary.listener.OnApiResponseListener;
 import com.example.babydiary.model.Diary;
 import com.example.babydiary.model.Tag;
@@ -57,6 +58,7 @@ public class CreateDiaryActivity extends AppCompatActivity {
     private TagAdapter tagAdapter;
     private java.util.List<Tag> tags;
     private java.util.List<Integer> selectedTagIds;
+    private LoadingDialog loadingDialog;
 
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<Intent> galleryLauncher;
@@ -319,23 +321,45 @@ public class CreateDiaryActivity extends AppCompatActivity {
             return;
         }
 
-        showLoading(true);
+        // LoadingDialog 표시
+        loadingDialog = LoadingDialog.show(this, "다이어리 생성 중...\n(사진 분석 및 AI 동화 생성)");
+
+        // 버튼 비활성화
+        btnSave.setEnabled(false);
+        btnSelectPhoto.setEnabled(false);
+        etDescription.setEnabled(false);
 
         // 다이어리 생성 API 호출 (선택된 태그 ID 포함)
         diaryService.createDiary(this, description, photoFile, selectedTagIds, new OnApiResponseListener<Diary>() {
             @Override
             public void onSuccess(Diary diary) {
-                showLoading(false);
+                if (loadingDialog != null && loadingDialog.isShowing()) {
+                    loadingDialog.dismiss();
+                }
+
                 Log.d(TAG, "Diary created successfully with " + selectedTagIds.size() + " tags: " + diary.getDiaryId());
                 Toast.makeText(CreateDiaryActivity.this, "다이어리가 작성되었습니다!", Toast.LENGTH_SHORT).show();
 
-                // 성공 후 MainActivity로 돌아가기
+                // 생성된 다이어리의 상세 화면으로 이동
+                Intent intent = new Intent(CreateDiaryActivity.this, DiaryDetailActivity.class);
+                intent.putExtra("diary_id", diary.getDiaryId());
+                startActivity(intent);
+
+                // 현재 Activity 종료
                 finish();
             }
 
             @Override
             public void onError(String error) {
-                showLoading(false);
+                if (loadingDialog != null && loadingDialog.isShowing()) {
+                    loadingDialog.dismiss();
+                }
+
+                // 버튼 다시 활성화
+                btnSave.setEnabled(true);
+                btnSelectPhoto.setEnabled(true);
+                etDescription.setEnabled(true);
+
                 Log.e(TAG, "Create diary error: " + error);
                 Toast.makeText(CreateDiaryActivity.this, "저장 실패: " + error, Toast.LENGTH_LONG).show();
             }
