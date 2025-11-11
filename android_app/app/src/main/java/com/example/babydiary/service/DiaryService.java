@@ -28,9 +28,10 @@ public class DiaryService {
      * @param context Context
      * @param description 다이어리 내용
      * @param photoFile 사진 파일
+     * @param tagIds 선택된 태그 ID 리스트
      * @param listener 응답 리스너
      */
-    public void createDiary(Context context, String description, File photoFile, OnApiResponseListener<Diary> listener) {
+    public void createDiary(Context context, String description, File photoFile, List<Integer> tagIds, OnApiResponseListener<Diary> listener) {
         String token = SharedPrefsManager.getToken(context);
         if (token == null) {
             listener.onError(Constants.ERROR_UNAUTHORIZED);
@@ -41,11 +42,14 @@ public class DiaryService {
         String currentDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                 .format(new java.util.Date());
 
+        // 태그 ID 배열을 JSON 문자열로 변환
+        String tagIdsJson = (tagIds == null || tagIds.isEmpty()) ? "[]" : gson.toJson(tagIds);
+
         // 텍스트 필드 설정
         Map<String, String> textFields = new HashMap<>();
         textFields.put("date", currentDate);
         textFields.put("description", description);
-        textFields.put("tag_ids", "[]");  // 빈 태그 배열
+        textFields.put("tag_ids", tagIdsJson);
 
         // Multipart 업로드
         ApiClient.postMultipart(Constants.ENDPOINT_DIARIES, token, photoFile, "photo", textFields, new ApiClient.ApiCallback() {

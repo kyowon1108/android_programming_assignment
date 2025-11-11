@@ -1,8 +1,10 @@
 package com.example.babydiary.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -10,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.babydiary.R;
+import com.example.babydiary.dialog.ConfirmDialog;
 import com.example.babydiary.listener.OnApiResponseListener;
 import com.example.babydiary.model.User;
 import com.example.babydiary.service.AuthService;
@@ -26,6 +29,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvEmail;
     private TextView tvBestStreak;
     private TextView tvCurrentStreak;
+    private Button btnLogout;
     private View progressBar;
     private View contentLayout;
 
@@ -39,6 +43,7 @@ public class ProfileActivity extends AppCompatActivity {
         authService = new AuthService();
 
         initViews();
+        setupListeners();
         loadProfile();
     }
 
@@ -51,8 +56,16 @@ public class ProfileActivity extends AppCompatActivity {
         tvEmail = findViewById(R.id.tv_email);
         tvBestStreak = findViewById(R.id.tv_best_streak);
         tvCurrentStreak = findViewById(R.id.tv_current_streak);
+        btnLogout = findViewById(R.id.btn_logout);
         progressBar = findViewById(R.id.progress_bar);
         contentLayout = findViewById(R.id.content_layout);
+    }
+
+    /**
+     * 리스너 설정
+     */
+    private void setupListeners() {
+        btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
     }
 
     /**
@@ -101,5 +114,45 @@ public class ProfileActivity extends AppCompatActivity {
         } else {
             ivProfile.setImageResource(R.drawable.ic_profile_default);
         }
+    }
+
+    /**
+     * 로그아웃 확인 다이얼로그 표시
+     */
+    private void showLogoutConfirmDialog() {
+        new ConfirmDialog(this)
+                .setTitle("로그아웃")
+                .setMessage("정말 로그아웃 하시겠습니까?")
+                .setPositiveButtonText("로그아웃")
+                .setNegativeButtonText("취소")
+                .setListener(new ConfirmDialog.OnConfirmListener() {
+                    @Override
+                    public void onConfirm() {
+                        performLogout();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        // 아무것도 하지 않음
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * 로그아웃 실행
+     */
+    private void performLogout() {
+        // SharedPreferences에서 토큰 및 사용자 정보 삭제
+        authService.logout(this);
+
+        Log.d(TAG, "User logged out successfully");
+        Toast.makeText(this, "로그아웃되었습니다", Toast.LENGTH_SHORT).show();
+
+        // LoginActivity로 이동하고 액티비티 스택 클리어
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

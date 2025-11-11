@@ -51,4 +51,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:visibility="gone" />
 
+    <!-- 주간 다이어리 생성 FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_create_weekly"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_add"
+        android:contentDescription="주간 다이어리 생성"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="24dp"
+        app:backgroundTint="@color/primary"
+        app:tint="@color/white" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

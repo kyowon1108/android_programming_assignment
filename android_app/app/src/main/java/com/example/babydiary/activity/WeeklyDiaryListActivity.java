@@ -14,11 +14,14 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.babydiary.R;
 import com.example.babydiary.adapter.WeeklyDiaryAdapter;
+import com.example.babydiary.dialog.LoadingDialog;
 import com.example.babydiary.listener.OnApiResponseListener;
 import com.example.babydiary.model.WeeklyDiary;
 import com.example.babydiary.service.WeeklyDiaryService;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -32,9 +35,11 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private TextView tvEmpty;
     private View progressBar;
+    private FloatingActionButton fabCreateWeekly;
 
     private WeeklyDiaryService weeklyDiaryService;
     private List<WeeklyDiary> weeklyDiaries;
+    private LoadingDialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +48,7 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
 
         weeklyDiaryService = new WeeklyDiaryService();
         weeklyDiaries = new ArrayList<>();
+        loadingDialog = new LoadingDialog(this);
 
         initViews();
         setupRecyclerView();
@@ -59,6 +65,7 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipe_refresh);
         tvEmpty = findViewById(R.id.tv_empty);
         progressBar = findViewById(R.id.progress_bar);
+        fabCreateWeekly = findViewById(R.id.fab_create_weekly);
     }
 
     /**
@@ -80,6 +87,7 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
      */
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(this::loadWeeklyDiaries);
+        fabCreateWeekly.setOnClickListener(v -> createWeeklyDiaryForCurrentWeek());
     }
 
     /**
@@ -129,6 +137,43 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
     private void showEmptyView(boolean show) {
         tvEmpty.setVisibility(show ? View.VISIBLE : View.GONE);
         recyclerView.setVisibility(show ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * 현재 주의 주간 다이어리 생성
+     */
+    private void createWeeklyDiaryForCurrentWeek() {
+        // 현재 연도 및 주차 계산
+        Calendar calendar = Calendar.getInstance();
+        int currentYear = calendar.get(Calendar.YEAR);
+        int currentWeekNumber = calendar.get(Calendar.WEEK_OF_YEAR);
+
+        Log.d(TAG, "Creating weekly diary for Year: " + currentYear + ", Week: " + currentWeekNumber);
+
+        loadingDialog.show();
+
+        weeklyDiaryService.createWeeklyDiary(this, currentYear, currentWeekNumber, new OnApiResponseListener<WeeklyDiary>() {
+            @Override
+            public void onSuccess(WeeklyDiary weeklyDiary) {
+                loadingDialog.dismiss();
+                Log.d(TAG, "Weekly diary created successfully: " + weeklyDiary.getWeekId());
+                Toast.makeText(WeeklyDiaryListActivity.this,
+                        currentYear + "년 " + currentWeekNumber + "주차 다이어리가 생성되었습니다!",
+                        Toast.LENGTH_SHORT).show();
+
+                // 목록 새로고침
+                loadWeeklyDiaries();
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingDialog.dismiss();
+                Log.e(TAG, "Create weekly diary error: " + error);
+                Toast.makeText(WeeklyDiaryListActivity.this,
+                        "주간 다이어리 생성 실패: " + error,
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override

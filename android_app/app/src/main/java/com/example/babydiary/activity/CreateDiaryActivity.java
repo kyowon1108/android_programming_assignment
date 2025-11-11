@@ -321,12 +321,12 @@ public class CreateDiaryActivity extends AppCompatActivity {
 
         showLoading(true);
 
-        // 다이어리 생성 API 호출
-        diaryService.createDiary(this, description, photoFile, new OnApiResponseListener<Diary>() {
+        // 다이어리 생성 API 호출 (선택된 태그 ID 포함)
+        diaryService.createDiary(this, description, photoFile, selectedTagIds, new OnApiResponseListener<Diary>() {
             @Override
             public void onSuccess(Diary diary) {
                 showLoading(false);
-                Log.d(TAG, "Diary created successfully: " + diary.getDiaryId());
+                Log.d(TAG, "Diary created successfully with " + selectedTagIds.size() + " tags: " + diary.getDiaryId());
                 Toast.makeText(CreateDiaryActivity.this, "다이어리가 작성되었습니다!", Toast.LENGTH_SHORT).show();
 
                 // 성공 후 MainActivity로 돌아가기
