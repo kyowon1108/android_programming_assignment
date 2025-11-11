@@ -152,13 +152,63 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
 
         loadingDialog.show();
 
-        weeklyDiaryService.createWeeklyDiary(this, currentYear, currentWeekNumber, new OnApiResponseListener<WeeklyDiary>() {
+        // 1단계: 이미 생성된 주간 다이어리가 있는지 확인
+        weeklyDiaryService.getWeeklyDiaryByDate(this, currentYear, currentWeekNumber, new OnApiResponseListener<WeeklyDiary>() {
+            @Override
+            public void onSuccess(WeeklyDiary existingDiary) {
+                // 이미 주간 다이어리가 존재하는 경우
+                loadingDialog.dismiss();
+                Log.d(TAG, "Weekly diary already exists: " + existingDiary.getWeekId());
+
+                Toast.makeText(WeeklyDiaryListActivity.this,
+                        currentYear + "년 " + currentWeekNumber + "주차 다이어리가 이미 존재합니다.\n다시 생성하시겠습니까?",
+                        Toast.LENGTH_LONG).show();
+
+                // 재생성 여부 확인 (사용자 선택 없이 바로 재생성)
+                recreateWeeklyDiary(currentYear, currentWeekNumber);
+            }
+
+            @Override
+            public void onError(String error) {
+                // 주간 다이어리가 없는 경우 (404 에러) - 정상적으로 생성 진행
+                if (error.contains("404") || error.contains("not found")) {
+                    Log.d(TAG, "Weekly diary not found, creating new one");
+                    createWeeklyDiaryApi(currentYear, currentWeekNumber);
+                } else {
+                    // 네트워크 오류 등 다른 에러
+                    loadingDialog.dismiss();
+                    Log.e(TAG, "Check weekly diary error: " + error);
+                    Toast.makeText(WeeklyDiaryListActivity.this,
+                            "주간 다이어리 확인 실패: " + error,
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    /**
+     * 주간 다이어리 재생성 (기존 것 업데이트)
+     * @param year 연도
+     * @param weekNumber 주차
+     */
+    private void recreateWeeklyDiary(int year, int weekNumber) {
+        loadingDialog.show();
+        createWeeklyDiaryApi(year, weekNumber);
+    }
+
+    /**
+     * 주간 다이어리 생성 API 호출
+     * @param year 연도
+     * @param weekNumber 주차
+     */
+    private void createWeeklyDiaryApi(int year, int weekNumber) {
+        weeklyDiaryService.createWeeklyDiary(this, year, weekNumber, new OnApiResponseListener<WeeklyDiary>() {
             @Override
             public void onSuccess(WeeklyDiary weeklyDiary) {
                 loadingDialog.dismiss();
                 Log.d(TAG, "Weekly diary created successfully: " + weeklyDiary.getWeekId());
                 Toast.makeText(WeeklyDiaryListActivity.this,
-                        currentYear + "년 " + currentWeekNumber + "주차 다이어리가 생성되었습니다!",
+                        year + "년 " + weekNumber + "주차 다이어리가 생성되었습니다!",
                         Toast.LENGTH_SHORT).show();
 
                 // 목록 새로고침
@@ -169,9 +219,20 @@ public class WeeklyDiaryListActivity extends AppCompatActivity {
             public void onError(String error) {
                 loadingDialog.dismiss();
                 Log.e(TAG, "Create weekly diary error: " + error);
-                Toast.makeText(WeeklyDiaryListActivity.this,
-                        "주간 다이어리 생성 실패: " + error,
-                        Toast.LENGTH_LONG).show();
+
+                // 에러 메시지 분석 및 사용자 친화적 메시지 표시
+                String userMessage;
+                if (error.contains("No diaries found for this week")) {
+                    userMessage = "이번 주(" + year + "년 " + weekNumber + "주차)에 작성한 일일 다이어리가 없습니다.\n" +
+                            "주간 다이어리를 생성하려면 최소 1개 이상의 일일 다이어리가 필요합니다.";
+                } else if (error.contains("400")) {
+                    userMessage = "이번 주에 작성한 일일 다이어리가 없습니다.\n" +
+                            "먼저 일일 다이어리를 작성해주세요.";
+                } else {
+                    userMessage = "주간 다이어리 생성 실패: " + error;
+                }
+
+                Toast.makeText(WeeklyDiaryListActivity.this, userMessage, Toast.LENGTH_LONG).show();
             }
         });
     }
