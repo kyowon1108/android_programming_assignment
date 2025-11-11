@@ -5,13 +5,16 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.babydiary.R;
 import com.example.babydiary.adapter.DiaryAdapter;
 import com.example.babydiary.listener.OnApiResponseListener;
@@ -19,6 +22,7 @@ import com.example.babydiary.listener.OnDiaryClickListener;
 import com.example.babydiary.model.Diary;
 import com.example.babydiary.model.WeeklyDiary;
 import com.example.babydiary.service.WeeklyDiaryService;
+import com.example.babydiary.util.Constants;
 
 /**
  * 주간 다이어리 상세 화면
@@ -28,6 +32,10 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
 
     private TextView tvWeekTitle;
     private TextView tvDateRange;
+    private CardView cardWeeklyImage;
+    private ImageView ivWeeklyImage;
+    private TextView tvWeeklyTitle;
+    private TextView tvWeeklySummary;
     private RecyclerView recyclerView;
     private DiaryAdapter adapter;
     private View progressBar;
@@ -67,6 +75,10 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
     private void initViews() {
         tvWeekTitle = findViewById(R.id.tv_week_title);
         tvDateRange = findViewById(R.id.tv_date_range);
+        cardWeeklyImage = findViewById(R.id.card_weekly_image);
+        ivWeeklyImage = findViewById(R.id.iv_weekly_image);
+        tvWeeklyTitle = findViewById(R.id.tv_weekly_title);
+        tvWeeklySummary = findViewById(R.id.tv_weekly_summary);
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
         contentLayout = findViewById(R.id.content_layout);
@@ -113,6 +125,37 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity implements OnDi
     private void displayWeeklyDiary(WeeklyDiary weeklyDiary) {
         tvWeekTitle.setText(weeklyDiary.getYear() + "년 " + weeklyDiary.getWeekNumber() + "주차");
         tvDateRange.setText(weeklyDiary.getStartDate() + " ~ " + weeklyDiary.getEndDate());
+
+        // 주간 대표 이미지 표시
+        if (weeklyDiary.getWeeklyImageUrl() != null && !weeklyDiary.getWeeklyImageUrl().isEmpty()) {
+            cardWeeklyImage.setVisibility(View.VISIBLE);
+            String imageUrl = Constants.BASE_URL + "/uploads/weekly/" + weeklyDiary.getWeeklyImageUrl();
+
+            Glide.with(this)
+                    .load(imageUrl)
+                    .centerCrop()
+                    .into(ivWeeklyImage);
+
+            Log.d(TAG, "Weekly image loaded: " + imageUrl);
+        } else {
+            cardWeeklyImage.setVisibility(View.GONE);
+        }
+
+        // AI 주간 제목 표시
+        if (weeklyDiary.getWeeklyTitle() != null && !weeklyDiary.getWeeklyTitle().isEmpty()) {
+            tvWeeklyTitle.setVisibility(View.VISIBLE);
+            tvWeeklyTitle.setText(weeklyDiary.getWeeklyTitle());
+        } else {
+            tvWeeklyTitle.setVisibility(View.GONE);
+        }
+
+        // AI 주간 요약 표시
+        if (weeklyDiary.getWeeklySummaryText() != null && !weeklyDiary.getWeeklySummaryText().isEmpty()) {
+            tvWeeklySummary.setVisibility(View.VISIBLE);
+            tvWeeklySummary.setText(weeklyDiary.getWeeklySummaryText());
+        } else {
+            tvWeeklySummary.setVisibility(View.GONE);
+        }
 
         // 일일 다이어리 목록 표시
         if (weeklyDiary.getDiaries() != null && !weeklyDiary.getDiaries().isEmpty()) {
