@@ -69,27 +69,31 @@ async def create_diary(
                     detail="Diary already exists for this date"
                 )
 
-            # Analyze image with Vision API (임시 Mock 데이터 사용)
+            # Analyze image with Vision API
             try:
                 full_photo_path = get_full_path(photo_path)
+                logger.info(f"Analyzing image with Vision API: {full_photo_path}")
                 vision_response = await vision_service.analyze_image(full_photo_path)
                 vision_description = vision_service.generate_description(vision_response)
+                logger.info(f"Vision API success: {vision_description}")
             except Exception as e:
-                logger.warning(f"Vision API failed, using mock data: {e}")
-                # Mock 데이터 사용 (손 이미지 기반)
-                vision_description = "이미지에서 다음과 같은 요소들이 감지되었습니다: 손, 손가락, 피부, 손바닥, 사람의 손."
+                logger.error(f"Vision API failed: {str(e)}", exc_info=True)
+                # Fallback to basic description
+                vision_description = "이미지 분석 중 오류가 발생했습니다. 기본 설명을 사용합니다."
 
             # Generate content with Gemini API
             try:
+                logger.info(f"Generating story with Gemini API")
                 story = await gemini_service.generate_story(vision_description, description)
                 emotion = await gemini_service.analyze_emotion(description)
                 expert_comment = await gemini_service.generate_expert_comment(description, emotion)
+                logger.info(f"Gemini API success - Emotion: {emotion}")
             except Exception as e:
-                logger.warning(f"Gemini API failed, using mock data: {e}")
-                # Mock 데이터 사용
-                story = "아기가 손을 펼쳐 다섯 손가락을 보여주며 인사를 했어요. '안녕하세요!' 하고 손을 흔들자, 엄마와 아빠가 함께 웃었어요. 작은 손가락들이 하나둘 움직이며 춤을 추는 것 같았어요. 오늘은 정말 즐거운 하루였어요!"
-                emotion = "joy"
-                expert_comment = "아이가 손동작으로 표현하는 것은 언어 발달과 소근육 운동 발달에 매우 중요합니다. 부모님이 함께 반응해주시는 것이 아이의 정서 발달에 큰 도움이 됩니다. 계속해서 아이와 상호작용하며 격려해주세요."
+                logger.error(f"Gemini API failed: {str(e)}", exc_info=True)
+                # Fallback to basic content
+                story = f"오늘의 이야기: {description}"
+                emotion = "neutral"
+                expert_comment = "아이의 일상을 기록하는 것은 성장 과정을 이해하는데 도움이 됩니다."
 
             # Insert diary
             cursor.execute(

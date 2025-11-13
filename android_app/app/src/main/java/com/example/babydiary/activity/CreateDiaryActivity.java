@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -32,12 +33,15 @@ import com.example.babydiary.service.TagService;
 import com.example.babydiary.util.Constants;
 import com.example.babydiary.util.ImageUtils;
 import com.example.babydiary.util.PermissionUtils;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
- * 다이어리 작성 화면
+ * 다이어리 작성 화면 - 태그 선택 시각적 피드백 추가
  */
 public class CreateDiaryActivity extends AppCompatActivity {
     private static final String TAG = "CreateDiaryActivity";
@@ -48,6 +52,8 @@ public class CreateDiaryActivity extends AppCompatActivity {
     private Button btnSave;
     private View progressBar;
     private RecyclerView rvTags;
+    private TextView tvSelectedTagsLabel;
+    private ChipGroup chipGroupSelectedTags;
 
     private Uri photoUri;
     private File photoFile;
@@ -57,7 +63,6 @@ public class CreateDiaryActivity extends AppCompatActivity {
     private TagService tagService;
     private TagAdapter tagAdapter;
     private java.util.List<Tag> tags;
-    private java.util.List<Integer> selectedTagIds;
     private LoadingDialog loadingDialog;
 
     private ActivityResultLauncher<Intent> cameraLauncher;
@@ -73,7 +78,6 @@ public class CreateDiaryActivity extends AppCompatActivity {
         diaryService = new DiaryService();
         tagService = new TagService();
         tags = new java.util.ArrayList<>();
-        selectedTagIds = new java.util.ArrayList<>();
 
         initViews();
         setupActivityResultLaunchers();
@@ -92,30 +96,61 @@ public class CreateDiaryActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btn_save);
         progressBar = findViewById(R.id.progress_bar);
         rvTags = findViewById(R.id.rv_tags);
+        tvSelectedTagsLabel = findViewById(R.id.tv_selected_tags_label);
+        chipGroupSelectedTags = findViewById(R.id.chip_group_selected_tags);
     }
 
     /**
      * 태그 RecyclerView 설정
      */
     private void setupTags() {
-        tagAdapter = new TagAdapter(this, tags, new TagAdapter.OnTagClickListener() {
+        // 새로운 TagAdapter 인터페이스 사용
+        tagAdapter = new TagAdapter(this, tags, new TagAdapter.OnTagSelectionListener() {
             @Override
-            public void onTagClick(Tag tag) {
-                // 토글 방식으로 선택/해제
-                if (selectedTagIds.contains(tag.getTagId())) {
-                    selectedTagIds.remove(Integer.valueOf(tag.getTagId()));
-                    Toast.makeText(CreateDiaryActivity.this, tag.getName() + " 태그 해제", Toast.LENGTH_SHORT).show();
-                } else {
-                    selectedTagIds.add(tag.getTagId());
-                    Toast.makeText(CreateDiaryActivity.this, tag.getName() + " 태그 선택", Toast.LENGTH_SHORT).show();
-                }
-                Log.d(TAG, "Selected tags: " + selectedTagIds.size());
+            public void onTagSelectionChanged(List<Tag> selectedTags) {
+                updateSelectedTagsUI(selectedTags);
             }
         });
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvTags.setLayoutManager(layoutManager);
         rvTags.setAdapter(tagAdapter);
+    }
+
+    /**
+     * 선택된 태그 UI 업데이트
+     */
+    private void updateSelectedTagsUI(List<Tag> selectedTags) {
+        chipGroupSelectedTags.removeAllViews();
+
+        if (selectedTags.isEmpty()) {
+            chipGroupSelectedTags.setVisibility(View.GONE);
+            tvSelectedTagsLabel.setVisibility(View.GONE);
+        } else {
+            chipGroupSelectedTags.setVisibility(View.VISIBLE);
+            tvSelectedTagsLabel.setVisibility(View.VISIBLE);
+
+            for (Tag tag : selectedTags) {
+                Chip chip = new Chip(this);
+                chip.setText(tag.getName());
+                chip.setCloseIconVisible(true);
+                chip.setCheckable(false);
+                chip.setChipBackgroundColorResource(R.color.primary_light);
+                chip.setTextColor(getResources().getColor(R.color.primary_dark));
+                chip.setCloseIconTintResource(R.color.primary_dark);
+
+                // Chip 클릭 시 태그 선택 해제
+                chip.setOnCloseIconClickListener(v -> {
+                    // TagAdapter에서 선택 해제
+                    tagAdapter.deselectTag(tag.getTagId());
+                });
+
+                chipGroupSelectedTags.addView(chip);
+            }
+        }
+
+        // 선택된 태그 개수를 로그로 확인
+        Log.d(TAG, "Selected tags count: " + selectedTags.size());
     }
 
     /**
@@ -320,6 +355,9 @@ public class CreateDiaryActivity extends AppCompatActivity {
             Toast.makeText(this, "사진을 선택해주세요", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // 선택된 태그 ID 가져오기
+        List<Integer> selectedTagIds = tagAdapter.getSelectedTagIds();
 
         // LoadingDialog 표시
         loadingDialog = LoadingDialog.show(this, "다이어리 생성 중...\n(사진 분석 및 AI 동화 생성)");
