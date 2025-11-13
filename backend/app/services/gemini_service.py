@@ -17,8 +17,8 @@ class GeminiService:
 
     def __init__(self):
         self.api_key = settings.GOOGLE_GEMINI_API_KEY
-        # Updated to use the correct Gemini model endpoint
-        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        # Use gemini-pro model which is the stable version
+        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
     async def _call_gemini(self, prompt: str) -> str:
         """
