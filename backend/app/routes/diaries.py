@@ -14,6 +14,7 @@ from app.models.schemas import (
     TagResponse, SuccessResponse
 )
 from app.config.database import get_db
+from app.config.settings import settings
 from app.utils.auth import get_current_user_id
 from app.utils.file_handler import save_uploaded_file, delete_file, get_full_path
 from app.utils.date_utils import get_week_number, calculate_streak
@@ -69,31 +70,43 @@ async def create_diary(
                     detail="Diary already exists for this date"
                 )
 
-            # Analyze image with Vision API
-            try:
-                full_photo_path = get_full_path(photo_path)
-                logger.info(f"Analyzing image with Vision API: {full_photo_path}")
-                vision_response = await vision_service.analyze_image(full_photo_path)
-                vision_description = vision_service.generate_description(vision_response)
-                logger.info(f"Vision API success: {vision_description}")
-            except Exception as e:
-                logger.error(f"Vision API failed: {str(e)}", exc_info=True)
-                # Fallback to basic description
-                vision_description = "이미지 분석 중 오류가 발생했습니다. 기본 설명을 사용합니다."
+            # Check if Mock Mode is enabled
+            if settings.USE_MOCK_AI:
+                logger.info("Using Mock AI data (USE_MOCK_AI=True)")
+                # Mock Vision API response
+                vision_description = "이미지에서 아기의 밝은 표정과 장난감, 그리고 따뜻한 분위기가 감지되었습니다."
 
-            # Generate content with Gemini API
-            try:
-                logger.info(f"Generating story with Gemini API")
-                story = await gemini_service.generate_story(vision_description, description)
-                emotion = await gemini_service.analyze_emotion(description)
-                expert_comment = await gemini_service.generate_expert_comment(description, emotion)
-                logger.info(f"Gemini API success - Emotion: {emotion}")
-            except Exception as e:
-                logger.error(f"Gemini API failed: {str(e)}", exc_info=True)
-                # Fallback to basic content
-                story = f"오늘의 이야기: {description}"
-                emotion = "neutral"
-                expert_comment = "아이의 일상을 기록하는 것은 성장 과정을 이해하는데 도움이 됩니다."
+                # Mock Gemini responses
+                story = f"오늘 아기는 정말 특별한 하루를 보냈어요. {description} 엄마와 아빠는 아기의 모습을 보며 행복한 미소를 지었답니다. 이런 소중한 순간들이 모여 아기의 아름다운 성장 이야기가 만들어지고 있어요."
+                emotion = "joy"
+                expert_comment = "아이의 일상적인 활동과 감정 표현을 관찰하고 기록하는 것은 발달 과정을 이해하는 데 매우 중요합니다. 부모님의 관심과 사랑이 아이의 정서적 안정감을 높여줍니다."
+                logger.info(f"Mock data generated - Emotion: {emotion}")
+            else:
+                # Analyze image with Vision API
+                try:
+                    full_photo_path = get_full_path(photo_path)
+                    logger.info(f"Analyzing image with Vision API: {full_photo_path}")
+                    vision_response = await vision_service.analyze_image(full_photo_path)
+                    vision_description = vision_service.generate_description(vision_response)
+                    logger.info(f"Vision API success: {vision_description}")
+                except Exception as e:
+                    logger.error(f"Vision API failed: {str(e)}", exc_info=True)
+                    # Fallback to basic description
+                    vision_description = "이미지 분석 중 오류가 발생했습니다. 기본 설명을 사용합니다."
+
+                # Generate content with Gemini API
+                try:
+                    logger.info(f"Generating story with Gemini API")
+                    story = await gemini_service.generate_story(vision_description, description)
+                    emotion = await gemini_service.analyze_emotion(description)
+                    expert_comment = await gemini_service.generate_expert_comment(description, emotion)
+                    logger.info(f"Gemini API success - Emotion: {emotion}")
+                except Exception as e:
+                    logger.error(f"Gemini API failed: {str(e)}", exc_info=True)
+                    # Fallback to basic content
+                    story = f"오늘의 이야기: {description}"
+                    emotion = "neutral"
+                    expert_comment = "아이의 일상을 기록하는 것은 성장 과정을 이해하는데 도움이 됩니다."
 
             # Insert diary
             cursor.execute(

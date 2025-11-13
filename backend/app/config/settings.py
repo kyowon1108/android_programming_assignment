@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
 
+    # Mock AI Mode (for testing without API keys)
+    USE_MOCK_AI: bool = False  # Set to True to use mock data instead of real APIs
+
     @property
     def database_url(self) -> str:
         """Generate PostgreSQL connection string"""
