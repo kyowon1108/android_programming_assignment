@@ -33,6 +33,18 @@
             android:textColor="@color/black"
             android:alpha="0.7" />
 
+        <TextView
+            android:id="@+id/tvAiWeeklyTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="#666666"
+            android:textStyle="italic"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
         <ImageView
             android:id="@+id/ivWeeklyImage"
             android:layout_width="match_parent"

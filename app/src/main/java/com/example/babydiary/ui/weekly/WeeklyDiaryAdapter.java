@@ -66,6 +66,15 @@ public class WeeklyDiaryAdapter extends RecyclerView.Adapter<WeeklyDiaryAdapter.
                     + " - " + formatDate(weeklyDiary.getEndDate());
             binding.tvDateRange.setText(dateRange);
 
+            // AI weekly title below date range
+            String aiTitle = weeklyDiary.getWeeklyTitle();
+            if (!TextUtils.isEmpty(aiTitle)) {
+                binding.tvAiWeeklyTitle.setText(aiTitle);
+                binding.tvAiWeeklyTitle.setVisibility(View.VISIBLE);
+            } else {
+                binding.tvAiWeeklyTitle.setVisibility(View.GONE);
+            }
+
             if (!TextUtils.isEmpty(weeklyDiary.getWeeklyTitle())) {
                 binding.tvWeeklyTitle.setText(weeklyDiary.getWeeklyTitle());
                 binding.tvWeeklyTitle.setVisibility(View.VISIBLE);
