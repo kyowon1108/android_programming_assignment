@@ -56,6 +56,16 @@ public class WeeklyDiaryListFragment extends Fragment {
         setupSwipeRefresh();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh the weekly list when returning from detail screen
+        // This will pick up any newly generated titles
+        if (hasInitializedYearSpinner) {
+            loadWeeklyDiaries();
+        }
+    }
+
     private void setupYearSpinner() {
         if (!isAdded()) return;
 

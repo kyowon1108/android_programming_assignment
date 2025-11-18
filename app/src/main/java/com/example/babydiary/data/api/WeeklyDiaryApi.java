@@ -7,6 +7,7 @@ import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface WeeklyDiaryApi {
@@ -22,6 +23,12 @@ public interface WeeklyDiaryApi {
 
     @GET("weekly_diaries/details")
     Call<WeeklyDiaryWithDiariesResponse> getWeeklyDiaryDetails(
+            @Query("year") int year,
+            @Query("week_number") int weekNumber
+    );
+
+    @POST("weekly_diaries/generate_title")
+    Call<WeeklyDiaryResponse> generateWeeklyTitle(
             @Query("year") int year,
             @Query("week_number") int weekNumber
     );

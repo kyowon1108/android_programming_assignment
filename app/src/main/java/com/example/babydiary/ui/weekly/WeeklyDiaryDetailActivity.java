@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -38,6 +39,7 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity {
     private final List<DiaryResponse> diaryList = new ArrayList<>();
     private int year;
     private int weekNumber;
+    private WeeklyDiaryResponse currentWeeklyDiary;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,7 +61,12 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity {
 
         setupToolbar();
         setupRecyclerView();
+        setupGenerateTitleButton();
         loadWeeklyDetail();
+    }
+
+    private void setupGenerateTitleButton() {
+        binding.btnGenerateTitle.setOnClickListener(v -> showGenerateTitleConfirmDialog());
     }
 
     private void setupToolbar() {
@@ -123,6 +130,7 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity {
     }
 
     private void displayWeeklyInfo(WeeklyDiaryResponse weeklyDiary) {
+        currentWeeklyDiary = weeklyDiary;
         showSummaryCard(true);
         binding.tvWeekTitle.setText(
                 weeklyDiary.getYear() + "년 " + weeklyDiary.getWeekNumber() + "주차");
@@ -130,11 +138,14 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity {
                 + " - " + formatDate(weeklyDiary.getEndDate());
         binding.tvDateRange.setText(dateRange);
 
+        // Control generate button visibility
         if (!TextUtils.isEmpty(weeklyDiary.getWeeklyTitle())) {
             binding.tvWeeklyTitle.setText(weeklyDiary.getWeeklyTitle());
             binding.tvWeeklyTitle.setVisibility(View.VISIBLE);
+            binding.btnGenerateTitle.setVisibility(View.GONE);
         } else {
             binding.tvWeeklyTitle.setVisibility(View.GONE);
+            binding.btnGenerateTitle.setVisibility(View.VISIBLE);
         }
 
         if (!TextUtils.isEmpty(weeklyDiary.getWeeklySummaryText())) {
@@ -183,5 +194,60 @@ public class WeeklyDiaryDetailActivity extends AppCompatActivity {
             return "-";
         }
         return DateUtils.serverDateToDisplay(date);
+    }
+
+    private void showGenerateTitleConfirmDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("주간 제목 생성")
+                .setMessage("AI가 이 주의 제목을 한 번만 생성합니다.\n생성 후에는 수정하거나 다시 생성할 수 없습니다.\n계속하시겠습니까?")
+                .setPositiveButton("생성", (dialog, which) -> generateWeeklyTitle())
+                .setNegativeButton("취소", null)
+                .show();
+    }
+
+    private void generateWeeklyTitle() {
+        showLoading(true);
+
+        weeklyDiaryApi.generateWeeklyTitle(year, weekNumber)
+                .enqueue(new Callback<WeeklyDiaryResponse>() {
+                    @Override
+                    public void onResponse(Call<WeeklyDiaryResponse> call, Response<WeeklyDiaryResponse> response) {
+                        showLoading(false);
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            WeeklyDiaryResponse updated = response.body();
+                            // Update UI with new title
+                            displayWeeklyInfo(updated);
+                            Toast.makeText(WeeklyDiaryDetailActivity.this,
+                                    "주간 제목이 생성되었습니다.", Toast.LENGTH_SHORT).show();
+
+                            // Update the local title
+                            currentWeeklyDiary = updated;
+                        } else if (response.code() == 401) {
+                            AuthUtils.handleUnauthorized(WeeklyDiaryDetailActivity.this);
+                        } else if (response.code() == 409 || response.code() == 400) {
+                            Toast.makeText(WeeklyDiaryDetailActivity.this,
+                                    "이미 생성된 주간 제목이 있습니다.", Toast.LENGTH_LONG).show();
+                            // Hide button just in case
+                            binding.btnGenerateTitle.setVisibility(View.GONE);
+                        } else if (response.code() == 503) {
+                            Toast.makeText(WeeklyDiaryDetailActivity.this,
+                                    "AI 서비스가 일시적으로 사용 불가합니다. 잠시 후 다시 시도해주세요.",
+                                    Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(WeeklyDiaryDetailActivity.this,
+                                    "주간 제목 생성 실패 (" + response.code() + ")",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeeklyDiaryResponse> call, Throwable t) {
+                        showLoading(false);
+                        Toast.makeText(WeeklyDiaryDetailActivity.this,
+                                "네트워크 오류: " + t.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }
