@@ -113,7 +113,7 @@ public class DiaryListFragment extends Fragment {
             binding.progressBar.setVisibility(View.VISIBLE);
         }
 
-        diaryApi.getDiaries(LIMIT, currentOffset, null, null, null, null, null)
+        diaryApi.getDiaries(LIMIT, currentOffset, null, null, null, null, null, null)
                 .enqueue(new Callback<DiaryListResponse>() {
                     @Override
                     public void onResponse(Call<DiaryListResponse> call, Response<DiaryListResponse> response) {

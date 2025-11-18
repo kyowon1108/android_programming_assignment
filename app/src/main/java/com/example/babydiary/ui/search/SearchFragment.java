@@ -50,16 +50,18 @@ public class SearchFragment extends Fragment {
     private final List<String> tagNameOptions = new ArrayList<>();
     private ArrayAdapter<String> tagSpinnerAdapter;
 
-    private static final String[] EMOTION_VALUES = {null, "joy", "sadness", "anger", "surprise", "fear", "neutral"};
-    private static final String[] EMOTION_LABELS = {"전체 감정", "기쁨", "슬픔", "분노", "놀람", "두려움", "중립"};
+    // Emotion tag spinner (dynamic, from TagApi where tag_category="emotion")
+    private final List<Integer> emotionTagIds = new ArrayList<>();
+    private final List<String> emotionTagNames = new ArrayList<>();
+    private ArrayAdapter<String> emotionTagAdapter;
 
     private String keyword = null;
     private String startDate = null;
     private String endDate = null;
     private String startDatePlaceholder;
     private String endDatePlaceholder;
-    private String selectedEmotion = null;
     private Integer selectedTagId = null;
+    private Integer selectedEmotionTagId = null;
 
     private static final int LIMIT = 20;
     private int offset = 0;
@@ -122,22 +124,30 @@ public class SearchFragment extends Fragment {
     }
 
     private void setupEmotionSpinner() {
-        ArrayAdapter<String> emotionAdapter = new ArrayAdapter<>(
+        emotionTagIds.clear();
+        emotionTagNames.clear();
+
+        // index 0 = "전체 감정" (no filter)
+        emotionTagIds.add(null);
+        emotionTagNames.add("전체 감정");
+
+        emotionTagAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
-                EMOTION_LABELS
+                emotionTagNames
         );
-        emotionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        binding.spEmotion.setAdapter(emotionAdapter);
+        emotionTagAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        binding.spEmotion.setAdapter(emotionTagAdapter);
+
         binding.spEmotion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedEmotion = EMOTION_VALUES[position];
+                selectedEmotionTagId = emotionTagIds.get(position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                selectedEmotion = null;
+                selectedEmotionTagId = null;
             }
         });
     }
@@ -177,10 +187,18 @@ public class SearchFragment extends Fragment {
                 if (!isAdded() || binding == null) return;
                 if (response.isSuccessful() && response.body() != null) {
                     for (Tag tag : response.body()) {
+                        // Add to general tag spinner
                         tagIdOptions.add(tag.getTagId());
                         tagNameOptions.add(tag.getTagName());
+
+                        // Add to emotion tag spinner if tag_category="emotion"
+                        if ("emotion".equalsIgnoreCase(tag.getTagCategory())) {
+                            emotionTagIds.add(tag.getTagId());
+                            emotionTagNames.add(tag.getTagName());
+                        }
                     }
                     tagSpinnerAdapter.notifyDataSetChanged();
+                    emotionTagAdapter.notifyDataSetChanged();
                 } else if (response.code() == 401) {
                     AuthUtils.handleUnauthorized(requireContext());
                 } else {
@@ -277,14 +295,15 @@ public class SearchFragment extends Fragment {
         isLoading = true;
         showLoading(true);
 
-        Call<DiaryListResponse> call = diaryApi.searchDiaries(
+        Call<DiaryListResponse> call = diaryApi.getDiaries(
                 LIMIT,
                 offset,
                 startDate,
                 endDate,
                 keyword,
-                selectedEmotion,
-                selectedTagId
+                null,                   // emotion (AI) - disabled for now
+                selectedTagId,          // general tag (e.g., 놀이터)
+                selectedEmotionTagId    // emotion tag (e.g., 놀람)
         );
 
         call.enqueue(new Callback<DiaryListResponse>() {
