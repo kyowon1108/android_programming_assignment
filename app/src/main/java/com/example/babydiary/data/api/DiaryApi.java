@@ -42,4 +42,15 @@ public interface DiaryApi {
 
     @DELETE("diaries/{id}")
     Call<MessageResponse> deleteDiary(@Path("id") int id);
+
+    @GET("diaries/search")
+    Call<DiaryListResponse> searchDiaries(
+            @Query("limit") Integer limit,
+            @Query("offset") Integer offset,
+            @Query("start_date") String startDate,
+            @Query("end_date") String endDate,
+            @Query("keyword") String keyword,
+            @Query("emotion") String emotion,
+            @Query("tag_id") Integer tagId
+    );
 }

@@ -277,7 +277,7 @@ public class SearchFragment extends Fragment {
         isLoading = true;
         showLoading(true);
 
-        Call<DiaryListResponse> call = diaryApi.getDiaries(
+        Call<DiaryListResponse> call = diaryApi.searchDiaries(
                 LIMIT,
                 offset,
                 startDate,
